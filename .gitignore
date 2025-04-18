@@ -1,0 +1,8 @@
+.vs/
+*.user
+*.suo
+
+bin/
+obj/
+
+*.mgcb.tmp
