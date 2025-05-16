@@ -2,7 +2,6 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -22,12 +21,20 @@ namespace Fruit_Quest
         private Dictionary<Vector2, int> collisions;
         private Dictionary<Vector2, int> dangers;
         private Dictionary<Vector2, int> collectible;
+        private List<Rectangle> collisionsList;
+        private List<Rectangle> collectibleList;
+        private List<Rectangle> dangersList;
         private Texture2D terrain;
         private Texture2D fruits;
         private Texture2D saw;
         private Texture2D spikes;
         private Texture2D hitboxes;
         private FollowCamera camera;
+        private KeyboardState keyboardState;
+
+        public readonly static int SCALE = 4; //на сколько увеличиваются все объекты в игре
+        private readonly static int TILESIZE = 16 * SCALE;
+        private readonly static int SAW_OFFSET = 22 * SCALE;
 
         public Game1()
         {
@@ -88,6 +95,10 @@ namespace Fruit_Quest
                 }
             }
 
+            collisionsList = GetListOfRectFrom(collisions);
+            collectibleList = GetListOfRectFrom(collectible);
+            dangersList = GetListOfRectFrom(dangers);
+
             Texture2D texture = Content.Load<Texture2D>("player1");
             player = new Player(texture, new Vector2(500, 300));
             terrain = Content.Load<Texture2D>("terrain");
@@ -104,32 +115,15 @@ namespace Fruit_Quest
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
-
-            var newPlayerPosition = player.UpdatePos(gameTime);
-            Rectangle futureRectPlayer = new(
-                (int)newPlayerPosition.X + 4 * (int)Player.hitboxPosition.X,
-                (int)newPlayerPosition.Y + 4 * (int)Player.hitboxPosition.Y,
-                player.playerRect.Width,
-                player.playerRect.Height);
-
-            bool collision = false;
-
-            foreach (var tile in collisions)
+            keyboardState = Keyboard.GetState();
+            player.Update(keyboardState, collisionsList);
+            
+            foreach (var danger in dangersList)
             {
-                Rectangle tileRect = new Rectangle(
-                    (int)tile.Key.X * 64, (int)tile.Key.Y * 64, 64, 64);
-
-                if (futureRectPlayer.Intersects(tileRect))
+                if (danger.Intersects(player.playerRect))
                 {
-                    collision = true;
-                    break;
+                    Exit();
                 }
-            }
-
-            if (!collision)
-            {
-                player.position = newPlayerPosition;
             }
 
             Vector2 playerPosition = player.position;
@@ -145,22 +139,20 @@ namespace Fruit_Quest
             // TODO: Add your drawing code here
             _spriteBatch.Begin(samplerState: SamplerState.PointClamp, transformMatrix: camera.Transform);
 
-            int tileSize = 16;
-
             player.Draw(_spriteBatch);
 
-            DrawLayerDict(middle, tileSize);
-            DrawLayerDict(collisions, tileSize);
-            DrawLayerDict(fore, tileSize);
-            DrawLayerDict(dangers, tileSize);
-            DrawLayerDict(collectible, tileSize);
+            DrawLayerDict(middle);
+            DrawLayerDict(fore);
+            DrawLayerDict(collisions);
+            DrawLayerDict(dangers);
+            DrawLayerDict(collectible);
 
             _spriteBatch.End();
 
             base.Draw(gameTime);
         }
 
-        private void DrawLayerDict(Dictionary<Vector2, int> layerDict, int tileSize)
+        private void DrawLayerDict(Dictionary<Vector2, int> layerDict)
         {
             foreach (var item in layerDict)
             {
@@ -188,18 +180,18 @@ namespace Fruit_Quest
                 if (tileset.image != "saw")
                 {
                     destination = new Rectangle(
-                    (int)pos.X * tileSize * 4,
-                    (int)pos.Y * tileSize * 4,
-                    width * 4,
-                    height * 4);
+                    (int)pos.X * TILESIZE,
+                    (int)pos.Y * TILESIZE,
+                    TILESIZE,
+                    TILESIZE);
                 }
                 else
                 {
                    destination = new Rectangle(
-                   (int)(pos.X * tileSize) * 4,
-                   (int)(pos.Y * tileSize - 22) * 4,
-                   width * 4,
-                   height * 4);
+                   (int)(pos.X * TILESIZE),
+                   (int)(pos.Y * TILESIZE - SAW_OFFSET),
+                   width * SCALE,
+                   height * SCALE);
                 }
                 
 
@@ -233,6 +225,20 @@ namespace Fruit_Quest
                 "hitboxes" => hitboxes,
                 _ => null
             };
+        }
+
+        private List<Rectangle> GetListOfRectFrom(Dictionary<Vector2, int> tiles)
+        {
+            List<Rectangle> result = new();
+            foreach (var tile in tiles)
+            {
+                Rectangle tileRect = new Rectangle(
+                    (int)tile.Key.X * TILESIZE, (int)tile.Key.Y * TILESIZE, TILESIZE, TILESIZE);
+
+                result.Add(tileRect);
+            }
+
+            return result;
         }
     }
 }

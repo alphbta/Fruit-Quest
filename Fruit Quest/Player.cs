@@ -1,17 +1,22 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using System;
+using System.Collections.Generic;
 
 namespace Fruit_Quest
 {
     internal class Player : Sprite
     {
-        private static readonly int SCALE = 4;
-        
-        //player1.png
-        public static Vector2 hitboxPosition = new Vector2(9, 10);
-        public static int hitboxWidth = 16;
-        public static int hitboxHeight = 22;
+        private readonly int SCALE = Game1.SCALE;
+
+        private float changeY;
+        private bool spacePressed = false;
+
+        //player1.png желтые рамки игрока - хитбокс
+        private readonly static Vector2 hitboxPosition = new Vector2(9, 10);
+        private readonly static int hitboxWidth = 16;
+        private readonly static int hitboxHeight = 22;
 
         public Rectangle playerRect
         {
@@ -27,41 +32,52 @@ namespace Fruit_Quest
         }
 
 
-        public Player(Texture2D texture, Vector2 position) : base(texture, position) { }
+        public Player(Texture2D texture, Vector2 position) : base(texture, position) { changeY = new(); }
 
-        public Vector2 UpdatePos(GameTime gameTime)
+        public void Update(KeyboardState keyState, List<Rectangle> collisions)
         {
-            base.Update(gameTime);
+            float changeX = 0;
 
-            Vector2 direction = Vector2.Zero;
-
-            if (Keyboard.GetState().IsKeyDown(Keys.W))
+            if (keyState.IsKeyDown(Keys.A))
             {
-                direction.Y -= 1;
+                changeX -= 5;
+            }
+            if (keyState.IsKeyDown(Keys.D))
+            {
+                changeX += 5;
             }
 
-            if (Keyboard.GetState().IsKeyDown(Keys.A))
+            position.X += changeX;
+
+            foreach (var collision in collisions)
             {
-                direction.X -= 1;
+                if (collision.Intersects(playerRect))
+                {
+                    position.X -= changeX;
+                }
             }
 
-            if (Keyboard.GetState().IsKeyDown(Keys.S))
+            changeY += 0.5f;
+            changeY = Math.Min(20f, changeY);
+
+            if (!spacePressed && keyState.IsKeyDown(Keys.Space))
             {
-                direction.Y += 1;
+                spacePressed = true;
+                changeY = -12;
             }
 
-            if (Keyboard.GetState().IsKeyDown(Keys.D))
-            {
-                direction.X += 1;
-            }
+            if (keyState.IsKeyUp(Keys.Space))
+                spacePressed = false;
 
-            if (direction != Vector2.Zero)
+            position.Y += changeY;
+            foreach (var collision in collisions)
             {
-                direction.Normalize();
+                if (collision.Intersects(playerRect))
+                {
+                    position.Y -= changeY;
+                    changeY = 0;
+                }
             }
-
-            float speed = 5f;
-            return position + direction * speed;
         }
     }
 }

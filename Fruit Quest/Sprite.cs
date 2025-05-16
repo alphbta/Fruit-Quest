@@ -5,7 +5,7 @@ namespace Fruit_Quest
 {
     internal class Sprite
     {
-        private static readonly float SCALE = 4f;
+        private readonly int SCALE = Game1.SCALE;
 
         public Texture2D texture;
         public Vector2 position;
@@ -16,8 +16,8 @@ namespace Fruit_Quest
                 return new Rectangle(
                     (int)position.X,
                     (int)position.Y,
-                    texture.Width * (int)SCALE,
-                    texture.Height * (int)SCALE
+                    texture.Width * SCALE,
+                    texture.Height * SCALE
                     );
             }
         }
