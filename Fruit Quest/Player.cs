@@ -12,71 +12,68 @@ namespace Fruit_Quest
 
         private float changeY;
         private bool spacePressed = false;
+        public Vector2 velocity;
+        public bool Grounded {  get; set; }
+        public int Direction { get; set; } // 1 = left, -1 = right
 
         //player1.png желтые рамки игрока - хитбокс
         private readonly static Vector2 hitboxPosition = new Vector2(9, 10);
         private readonly static int hitboxWidth = 16;
         private readonly static int hitboxHeight = 22;
 
-        public Rectangle playerRect
+        public Rectangle PlayerRect
         {
             get
             {
                 return new Rectangle(
-                    (int)position.X + (int)hitboxPosition.X * SCALE,
-                    (int)position.Y + (int)hitboxPosition.Y * SCALE,
+                    rect.X + (int)hitboxPosition.X * SCALE,
+                    rect.Y + (int)hitboxPosition.Y * SCALE,
                     hitboxWidth * SCALE,
                     hitboxHeight * SCALE
                     );
             }
         }
 
-
-        public Player(Texture2D texture, Vector2 position) : base(texture, position) { changeY = new(); }
-
-        public void Update(KeyboardState keyState, List<Rectangle> collisions)
+        public Player(Texture2D texture, Rectangle rect, Rectangle sourceRect)
+            : base(texture, rect, sourceRect) 
         {
-            float changeX = 0;
+            changeY = new();
+            velocity = new();
+            Grounded = false;
+            Direction = -1;
+        }
+
+        public void Update(KeyboardState keyState)
+        {
+            velocity.X = 0;
+            velocity.Y += 0.5f;
+            velocity.Y = Math.Min(10f, velocity.Y);
+            int prevDirection = Direction;
 
             if (keyState.IsKeyDown(Keys.A))
             {
-                changeX -= 5;
+                velocity.X -= 5;
+                Direction = 1;
             }
             if (keyState.IsKeyDown(Keys.D))
             {
-                changeX += 5;
+                velocity.X += 5;
+                Direction = -1;
             }
 
-            position.X += changeX;
-
-            foreach (var collision in collisions)
-            {
-                if (collision.Intersects(playerRect))
-                {
-                    position.X -= changeX;
-                }
-            }
-
-            changeY += 0.5f;
-            changeY = Math.Min(20f, changeY);
-
-            if (!spacePressed && keyState.IsKeyDown(Keys.Space))
+            if (Grounded && !spacePressed && keyState.IsKeyDown(Keys.Space))
             {
                 spacePressed = true;
-                changeY = -12;
+                velocity.Y = -12;
             }
 
             if (keyState.IsKeyUp(Keys.Space))
                 spacePressed = false;
 
-            position.Y += changeY;
-            foreach (var collision in collisions)
+            if (Direction != prevDirection)
             {
-                if (collision.Intersects(playerRect))
-                {
-                    position.Y -= changeY;
-                    changeY = 0;
-                }
+                sourceRect.X += sourceRect.Width;
+                sourceRect.Width = -sourceRect.Width;
             }
         }
     }

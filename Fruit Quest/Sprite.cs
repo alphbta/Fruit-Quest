@@ -5,35 +5,22 @@ namespace Fruit_Quest
 {
     internal class Sprite
     {
-        private readonly int SCALE = Game1.SCALE;
-
         public Texture2D texture;
-        public Vector2 position;
-        public Rectangle Rect
-        {
-            get
-            {
-                return new Rectangle(
-                    (int)position.X,
-                    (int)position.Y,
-                    texture.Width * SCALE,
-                    texture.Height * SCALE
-                    );
-            }
-        }
+        public Rectangle rect;
+        public Rectangle sourceRect;
 
-
-        public Sprite(Texture2D texture, Vector2 position)
+        public Sprite(Texture2D texture, Rectangle rect, Rectangle sourceRect)
         {
             this.texture = texture;
-            this.position = position;
+            this.rect = rect;
+            this.sourceRect = sourceRect;
         }
 
         public virtual void Update(GameTime gameTime) { }
 
         public virtual void Draw(SpriteBatch spriteBatch)
         {
-            spriteBatch.Draw(texture, Rect, Color.White);
+            spriteBatch.Draw(texture, rect, sourceRect, Color.White);
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 
@@ -13,7 +14,6 @@ namespace Fruit_Quest
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         
-
         Player player;
         private TiledMap level1;
         private Dictionary<Vector2, int> middle;
@@ -22,7 +22,6 @@ namespace Fruit_Quest
         private Dictionary<Vector2, int> dangers;
         private Dictionary<Vector2, int> collectible;
         private List<Rectangle> collisionsList;
-        private List<Rectangle> collectibleList;
         private List<Rectangle> dangersList;
         private Texture2D terrain;
         private Texture2D fruits;
@@ -31,6 +30,8 @@ namespace Fruit_Quest
         private Texture2D hitboxes;
         private FollowCamera camera;
         private KeyboardState keyboardState;
+        private List<Sprite> spritesFruits;
+        private List<Sprite> collected;
 
         public readonly static int SCALE = 4; //на сколько увеличиваются все объекты в игре
         private readonly static int TILESIZE = 16 * SCALE;
@@ -47,10 +48,7 @@ namespace Fruit_Quest
 
         protected override void Initialize()
         {
-            // TODO: Add your initialization logic here
-
             base.Initialize();
-
         }
 
         protected override void LoadContent()
@@ -60,6 +58,14 @@ namespace Fruit_Quest
             using var stream = File.OpenRead("../../../Data/level1.tmj");
             var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
             level1 = JsonSerializer.Deserialize<TiledMap>(stream, options);
+
+            terrain = Content.Load<Texture2D>("terrain");
+            fruits = Content.Load<Texture2D>("fruits");
+            hitboxes = Content.Load<Texture2D>("hitboxes");
+            spikes = Content.Load<Texture2D>("spikes");
+            saw = Content.Load<Texture2D>("saw");
+            spritesFruits = new List<Sprite>();
+            collected = new List<Sprite>();
 
             foreach (var layer in level1.layers)
             {
@@ -72,6 +78,18 @@ namespace Fruit_Quest
                         int gid = layer.data[idx];
                         if (gid == 0) continue;
                         layerDict[new Vector2(x, y)] = gid;
+                        var tileset = GetTilesetForGid(gid, level1.tilesets);
+                        if (tileset.image == "fruits")
+                        {
+                            var localId = gid - tileset.firstgid;
+                            int tileX = localId % tileset.columns;
+                            int tileY = localId / tileset.columns;
+                            var fruitTexture = GetTextureForName(tileset.image);
+                            var srcRect = new Rectangle(tileX * 16, tileY * 16, 16, 16);
+                            var rect = new Rectangle(x * TILESIZE, y * TILESIZE, TILESIZE, TILESIZE);
+                            var fruit = new Sprite(fruitTexture, rect, srcRect);
+                            spritesFruits.Add(fruit);
+                        }
                     }
                 }
 
@@ -96,18 +114,14 @@ namespace Fruit_Quest
             }
 
             collisionsList = GetListOfRectFrom(collisions);
-            collectibleList = GetListOfRectFrom(collectible);
             dangersList = GetListOfRectFrom(dangers);
 
             Texture2D texture = Content.Load<Texture2D>("player1");
-            player = new Player(texture, new Vector2(500, 300));
-            terrain = Content.Load<Texture2D>("terrain");
-            fruits = Content.Load<Texture2D>("fruits");
-            hitboxes = Content.Load<Texture2D>("hitboxes");
-            spikes = Content.Load<Texture2D>("spikes");
-            saw = Content.Load<Texture2D>("saw");
+            player = new Player(texture, new Rectangle(92, 760, 32 * 4, 32 * 4), new Rectangle(0, 0, 32, 32));
             camera = new FollowCamera(GraphicsDevice.Viewport, 0.2f);
-            camera.SetPosition(player.position, new Point(player.Rect.Width, player.Rect.Height));
+            camera.SetPosition(new Vector2(player.rect.X, player.rect.Y),
+                new Point(player.rect.Width,
+                player.rect.Height));
         }
 
         protected override void Update(GameTime gameTime)
@@ -116,18 +130,55 @@ namespace Fruit_Quest
                 Exit();
 
             keyboardState = Keyboard.GetState();
-            player.Update(keyboardState, collisionsList);
+            player.Update(keyboardState);
+
+            player.rect.X += (int)player.velocity.X;
             
+            foreach (var collision in collisionsList)
+            {
+                if (collision.Intersects(player.PlayerRect))
+                {
+                    player.rect.X -= (int)player.velocity.X;
+                }
+            }
+
+            player.rect.Y += (int)player.velocity.Y;
+
+            player.Grounded = false;
+
+            foreach (var collision in collisionsList)
+            {
+                if (collision.Intersects(player.PlayerRect))
+                {
+                    player.rect.Y -= (int)player.velocity.Y;
+                    player.velocity.Y = 0;
+                    player.Grounded = true;
+                }
+            }
+
             foreach (var danger in dangersList)
             {
-                if (danger.Intersects(player.playerRect))
+                if (danger.Intersects(player.PlayerRect))
                 {
                     Exit();
                 }
             }
 
-            Vector2 playerPosition = player.position;
-            camera.Update(playerPosition, new Point(player.Rect.Width, player.Rect.Height));
+            foreach (var fruit in spritesFruits)
+            {
+                if (fruit.rect.Intersects(player.PlayerRect))
+                {
+                    collected.Add(fruit);
+                }
+            }
+
+            foreach (var fruit in collected)
+            {
+                spritesFruits.Remove(fruit);
+            }
+
+            Vector2 playerPosition = new Vector2(player.rect.X, player.rect.Y);
+            camera.Update(playerPosition, new Point(player.rect.Width, player.rect.Height));
 
             base.Update(gameTime);
         }
@@ -147,6 +198,11 @@ namespace Fruit_Quest
             DrawLayerDict(dangers);
             DrawLayerDict(collectible);
 
+            foreach (var fruit in spritesFruits)
+            {
+                fruit.Draw(_spriteBatch);
+            }
+
             _spriteBatch.End();
 
             base.Draw(gameTime);
@@ -154,6 +210,7 @@ namespace Fruit_Quest
 
         private void DrawLayerDict(Dictionary<Vector2, int> layerDict)
         {
+            if (layerDict == null) return;
             foreach (var item in layerDict)
             {
                 var pos = item.Key;
@@ -194,8 +251,8 @@ namespace Fruit_Quest
                    height * SCALE);
                 }
                 
-
-                _spriteBatch.Draw(src, destination, sourceRect, Color.White);
+                if (tileset.image != "fruits")
+                    _spriteBatch.Draw(src, destination, sourceRect, Color.White);
             }
         }
 
