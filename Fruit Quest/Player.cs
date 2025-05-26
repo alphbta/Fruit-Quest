@@ -9,17 +9,16 @@ namespace Fruit_Quest
     internal class Player : Sprite
     {
         private readonly int SCALE = Game1.SCALE;
-
-        private float changeY;
+        
         private bool spacePressed = false;
         public Vector2 velocity;
         public bool Grounded {  get; set; }
-        public int Direction { get; set; } // 1 = left, -1 = right
+        public int Direction { get; set; } // -1 = left, 1 = right
 
         //player1.png желтые рамки игрока - хитбокс
-        private readonly static Vector2 hitboxPosition = new Vector2(9, 10);
-        private readonly static int hitboxWidth = 16;
-        private readonly static int hitboxHeight = 22;
+        private static readonly Vector2 hitboxPosition = new Vector2(9, 10);
+        private static readonly int hitboxWidth = 16;
+        private static readonly int hitboxHeight = 22;
 
         public Rectangle PlayerRect
         {
@@ -37,10 +36,9 @@ namespace Fruit_Quest
         public Player(Texture2D texture, Rectangle rect, Rectangle sourceRect)
             : base(texture, rect, sourceRect) 
         {
-            changeY = new();
             velocity = new();
             Grounded = false;
-            Direction = -1;
+            Direction = 1;
         }
 
         public void Update(KeyboardState keyState)
@@ -48,17 +46,17 @@ namespace Fruit_Quest
             velocity.X = 0;
             velocity.Y += 0.5f;
             velocity.Y = Math.Min(10f, velocity.Y);
-            int prevDirection = Direction;
+            var prevDirection = Direction;
 
             if (keyState.IsKeyDown(Keys.A))
             {
                 velocity.X -= 5;
-                Direction = 1;
+                Direction = -1;
             }
             if (keyState.IsKeyDown(Keys.D))
             {
                 velocity.X += 5;
-                Direction = -1;
+                Direction = 1;
             }
 
             if (Grounded && !spacePressed && keyState.IsKeyDown(Keys.Space))
