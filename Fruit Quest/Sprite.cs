@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Fruit_Quest
 {
-    internal class Sprite
+    public class Sprite
     {
         public Texture2D texture;
         public Rectangle rect;

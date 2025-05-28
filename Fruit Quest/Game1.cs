@@ -14,6 +14,7 @@ namespace Fruit_Quest
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private IGameState currentState;
+        private LevelManager levelManager;
         
         public static readonly int SCALE = 4; //на сколько увеличиваются все объекты в игре
 
@@ -34,7 +35,7 @@ namespace Fruit_Quest
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            currentState = new GameplayState(GraphicsDevice.Viewport, Content, this);
+            currentState = new GameplayState(this);
             currentState.LoadContent();
         }
 
