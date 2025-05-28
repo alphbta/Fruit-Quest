@@ -30,7 +30,6 @@ namespace Fruit_Quest
         private static readonly Vector2 hitboxPosition = new Vector2(9, 10);
         private static readonly int hitboxWidth = 16;
         private static readonly int hitboxHeight = 22;
-
         public Rectangle PlayerRect
         {
             get
@@ -43,13 +42,25 @@ namespace Fruit_Quest
                     );
             }
         }
+        
+        private Dictionary<string, Animation> animations;
+        private string currentAnimation;
 
-        public Player(Texture2D texture, Rectangle rect, Rectangle sourceRect)
+        public Player(Texture2D texture, Rectangle rect, Rectangle sourceRect, Dictionary<string, Texture2D> animationTextures)
             : base(texture, rect, sourceRect) 
         {
             velocity = new();
             Grounded = false;
             Direction = 1;
+            animations = new Dictionary<string, Animation>
+            {
+                ["Idle"] = new Animation(animationTextures["Idle"], 11, 0.1f),
+                ["Run"] = new Animation(animationTextures["Run"], 12, 0.06f),
+                ["Jump"] = new Animation(animationTextures["Jump"], 1, 0.1f),
+                ["Fall"] = new Animation(animationTextures["Fall"], 1, 0.1f),
+                ["Dash"] = new Animation(animationTextures["Dash"], 1, 0.1f),
+            };
+            currentAnimation = "Idle";
         }
 
         public void Update(GameTime gameTime, KeyboardState keyState)
@@ -59,7 +70,6 @@ namespace Fruit_Quest
                 velocity.X = 0;
                 velocity.Y += 0.5f;
                 velocity.Y = Math.Min(10f, velocity.Y);
-                var prevDirection = Direction;
 
                 if (keyState.IsKeyDown(Keys.A))
                 {
@@ -107,13 +117,33 @@ namespace Fruit_Quest
                 {
                     dashTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
                 }
-
-                if (Direction != prevDirection)
-                {
-                    sourceRect.X += sourceRect.Width;
-                    sourceRect.Width = -sourceRect.Width;
-                }
             }
+
+            if (IsDashing)
+                SetAnimation("Dash");
+            else if (!Grounded)
+                SetAnimation(velocity.Y > 0 ? "Fall" : "Jump");
+            else if (velocity.X != 0)
+                SetAnimation("Run");
+            else
+                SetAnimation("Idle");
+            
+            animations[currentAnimation].Update(gameTime);
+        }
+
+        public override void Draw(SpriteBatch spriteBatch)
+        {
+            var effect = Direction == -1 ? SpriteEffects.FlipHorizontally : SpriteEffects.None;
+            
+            spriteBatch.Draw(
+                animations[currentAnimation].Texture,
+                rect,
+                animations[currentAnimation].CurrentFrameRect,
+                Color.White,
+                0f,
+                Vector2.Zero,
+                effect,
+                0f);
         }
 
         public void SetAbility(PlayerAbility ability)
@@ -128,6 +158,15 @@ namespace Fruit_Quest
             dashDistanceRemaining = 110f;
             DashDirection = Direction;
             dashTimer = dashCooldown; // Reset the dash cooldown timer
+        }
+        
+        private void SetAnimation(string name)
+        {
+            if (currentAnimation != name)
+            {
+                currentAnimation = name;
+                animations[name].Reset();
+            }
         }
     }
 

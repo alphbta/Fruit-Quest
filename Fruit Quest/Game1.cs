@@ -1,10 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Text.Json;
 
 
 namespace Fruit_Quest
@@ -14,7 +10,6 @@ namespace Fruit_Quest
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
         private IGameState currentState;
-        private LevelManager levelManager;
         
         public static readonly int SCALE = 4; //на сколько увеличиваются все объекты в игре
 

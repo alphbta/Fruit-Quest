@@ -101,13 +101,27 @@ public class Level
         dangers = GetListOfRectFrom(layers["hit_dangers"]);
 
         Texture2D texture = content.Load<Texture2D>("player1");
+        Texture2D idle = content.Load<Texture2D>("player/Idle");
+        Texture2D run = content.Load<Texture2D>("player/Run");
+        Texture2D jump = content.Load<Texture2D>("player/Jump");
+        Texture2D fall = content.Load<Texture2D>("player/Fall");
+        Texture2D dash = content.Load<Texture2D>("player/Dash");
+        Dictionary<String, Texture2D> animationsTextures = new()
+        {
+            ["Idle"] = idle,
+            ["Run"] = run,
+            ["Jump"] = jump,
+            ["Fall"] = fall,
+            ["Dash"] = dash,
+        };
         player = new Player(texture, 
             new Rectangle(
             (int)playerPosition.X * Game1.SCALE,
             (int)playerPosition.Y * Game1.SCALE,
             32 * Game1.SCALE,
             32 * Game1.SCALE),
-            new Rectangle(0, 0, 32, 32));
+            new Rectangle(0, 0, 32, 32),
+            animationsTextures);
         player.SetAbility(ability);
         camera = new FollowCamera(new Viewport(0, 0, 1280, 720), 0.2f);
         camera.SetPosition(new Vector2(player.rect.X, player.rect.Y),
