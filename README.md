@@ -9,4 +9,4 @@ Fruit Quest - это 2D платформер на Monogame (C#), где ваша
 - Движение: <kbd>W</kbd>, <kbd>A</kbd>, <kbd>S</kbd>, <kbd>D</kbd>
 - Прыжок: <kbd>Space</kbd>
 - Перезапуск уровня: <kbd>R</kbd>
-- Рывок: <kbd>LShift</kbd>
+- Рывок: <kbd>LShift</kbd> (3 уровень)
